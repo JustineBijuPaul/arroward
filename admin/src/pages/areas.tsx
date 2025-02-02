@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAreas } from '../hooks/useAreas';
 import { Area } from '../types';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 
 const Areas: React.FC = () => {
   const { areas, loading, error, addArea, editArea, removeArea } = useAreas();
@@ -34,12 +35,16 @@ const Areas: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this area?')) {
-      try {
-        await removeArea(id);
-      } catch (err) {
-        console.error('Failed to delete area:', err);
+    try {
+      if (!window.confirm('Are you sure you want to delete this area?')) {
+        return;
       }
+      
+      await removeArea(id);
+      toast.success('Area deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete area:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete area');
     }
   };
 
@@ -65,8 +70,9 @@ const Areas: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Header title="Areas">
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Areas</h3>
           <button
             type="button"
             onClick={() => {
@@ -78,29 +84,30 @@ const Areas: React.FC = () => {
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add Area
           </button>
-        </Header>
-
-        <AreaList
-          areas={areas}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedArea(null);
-          }}
-          title={selectedArea ? 'Edit Area' : 'Add Area'}
-        >
-          <AreaForm
-            onSubmit={handleSubmit}
-            initialData={selectedArea || undefined}
-            isEditing={!!selectedArea}
+        </div>
+        <div className="border-t border-gray-200">
+          <AreaList
+            areas={areas}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
-        </Modal>
+        </div>
       </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedArea(null);
+        }}
+        title={selectedArea ? 'Edit Area' : 'Add Area'}
+      >
+        <AreaForm
+          onSubmit={handleSubmit}
+          initialData={selectedArea || undefined}
+          onCancel={() => setIsModalOpen(false)}
+        />
+      </Modal>
     </Layout>
   );
 };

@@ -1,38 +1,48 @@
 import axios from 'axios';
 
-// Create axios instance with default config
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 });
 
-// Add request interceptor
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
 
-// Add response interceptor
+  // Remove all leading slashes and 'api' prefixes
+  const cleanUrl = (config.url || '')
+    .replace(/^\/+/, '')
+    .replace(/^api\/+/, '');
+
+  // Add single api prefix
+  config.url = `api/${cleanUrl}`;
+
+  // Debug log
+  console.log('Making request to:', `${config.baseURL}/${config.url}`);
+
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    }
+    // Enhanced error logging
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     return Promise.reject(error);
   }
 );
 
-export default api; 
+export default api;

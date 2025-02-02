@@ -80,25 +80,25 @@ const Dashboard: React.FC = () => {
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <DashboardCard
             title="Total Managers"
-            value={stats.totalManagers}
+            value={stats?.totalManagers || 0}
             icon={UserGroupIcon}
             color="bg-blue-500"
           />
           <DashboardCard
             title="Total Areas"
-            value={stats.totalAreas}
+            value={stats?.totalAreas || 0}
             icon={MapIcon}
             color="bg-green-500"
           />
           <DashboardCard
             title="Total Services"
-            value={stats.totalServices}
+            value={stats?.totalServices || 0}
             icon={ChartBarIcon}
             color="bg-purple-500"
           />
           <DashboardCard
             title="Total Revenue"
-            value={`$${stats.totalRevenue.toLocaleString()}`}
+            value={`$${stats?.totalRevenue?.toLocaleString() || '0'}`}
             icon={CurrencyDollarIcon}
             color="bg-yellow-500"
           />
@@ -110,4 +110,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

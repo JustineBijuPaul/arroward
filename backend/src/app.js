@@ -4,38 +4,44 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const managerRoutes = require('./routes/managerRoutes');
+const areaRoutes = require('./routes/areaRoutes');
+const healthRoutes = require('./routes/healthRoutes');
+const authRoutes = require('./routes/authRoutes');
+const connectDB = require('./config/database');
+const adminRoutes = require('./routes/admin');
+const corsOptions = require('./config/cors');
 
 const app = express();
 const httpServer = createServer(app);
+
+// Initialize Socket.io with merged CORS config
 const io = new Server(httpServer, {
   cors: {
     origin: [
       'http://localhost:3000',  // client
-      'http://localhost:3002',  // manager
-      'http://localhost:3002'   // admin
+      'http://localhost:3002'   // manager/admin
     ],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Apply CORS before any other middleware
+app.use(cors(corsOptions));
+
 // Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3002', // Admin frontend
-    'http://localhost:3000'  // Main frontend (if needed)
-  ],
-  credentials: true
-}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch((err) => console.error('MongoDB connection error:', err));
+// Connect to MongoDB
+connectDB();
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -47,14 +53,38 @@ io.on('connection', (socket) => {
 });
 
 // Routes will be imported here
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+// app.get('/admin/health', (req, res) => {
+//   console.log('Admin health check endpoint hit');
+//   res.status(200).json({ status: 'ok' });
+// });
+
+// Configure routes
+const router = express.Router();
+
+// Remove these conflicting routes
+// router.use('/admin/auth', authRoutes);
+// router.use('/admin/areas', areaRoutes);
+// router.use('/admin/managers', managerRoutes);
+// router.use('/admin/health', healthRoutes);
+
+// Mount routes in correct order
+app.use('/api/admin', adminRoutes);  // Mount admin routes first
+app.use('/api', router);             // Mount other routes after
+
+// Add route logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
 });
 
-const adminRoutes = require('./routes/admin');
-
-// Admin routes
-app.use('/api/admin', adminRoutes);
+// Add debug logging for 404s
+app.use((req, res, next) => {
+  console.log(`[404] ${req.method} ${req.originalUrl}`);
+  console.log('Available routes:', app._router.stack.map(r => r.route?.path).filter(Boolean));
+  res.status(404).json({
+    message: `Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

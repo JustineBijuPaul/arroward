@@ -25,7 +25,7 @@ export interface Manager {
   lastName: string;
   email: string;
   password?: string;
-  phone?: string;
+  phone: string; // Remove optional modifier
   assignedArea: string;
   status: 'active' | 'inactive';
   createdAt?: Date;
@@ -33,15 +33,17 @@ export interface Manager {
 }
 
 export interface Service {
-  _id: string;
+  _id?: string;
   name: string;
-  description?: string;
-  price: number;
-  duration: number;
-  areaId?: string;
-  status: 'active' | 'inactive';
+  description: string;
+  areaId: string;  // Add this field
+  category: 'farm_maintenance' | 'home_cleaning' | 'house_painting' | 'blight_removal' | 'tree_services' | 'other';
+  basePrice: number;
+  priceUnit: 'per_hour' | 'per_square_meter' | 'per_job';
+  active: boolean;
+  requiredSkills?: string[];
+  estimatedDuration: number;
   createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface Settings {
@@ -61,4 +63,4 @@ export interface Settings {
     push: boolean;
     frequency: 'daily' | 'weekly' | 'monthly';
   };
-} 
+}

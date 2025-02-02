@@ -1,8 +1,7 @@
 export interface User {
   _id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: 'admin' | 'superadmin';
   createdAt: string;
   updatedAt: string;
@@ -10,10 +9,13 @@ export interface User {
 
 export interface Manager {
   _id: string;
-  name: string;
+  managerCode: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
-  areaId?: string;
+  phone: string;
+  assignedArea: string;
+  status: 'active' | 'inactive' | 'suspended';
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +24,11 @@ export interface Area {
   _id: string;
   name: string;
   description?: string;
+  coordinates?: [number, number]; // [longitude, latitude]
+  country?: string;
+  state?: string;
+  city?: string;
+  active?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -54,4 +61,14 @@ export interface Settings {
     push: boolean;
     frequency: 'instant' | 'daily' | 'weekly';
   };
+}
+
+// Add a type for area form data
+export interface AreaFormData {
+  name: string;
+  description?: string;
+  coordinates?: [string | number, string | number];
+  country?: string;
+  state?: string;
+  city?: string;
 } 

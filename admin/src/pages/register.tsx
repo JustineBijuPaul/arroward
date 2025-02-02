@@ -18,7 +18,9 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>({
+    mode: 'onBlur'
+  });
   const password = watch('password');
 
   const onSubmit = async (data: RegisterFormInputs) => {
@@ -78,11 +80,19 @@ const Register: React.FC = () => {
                   {...register('email', {
                     required: 'Email is required',
                     pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
+                      value: /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
+                      message: 'Please enter a valid email address'
+                    },
+                    validate: {
+                      validFormat: (value) => {
+                        const normalized = value.toLowerCase().trim();
+                        return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalized) || 
+                          'Invalid email format';
+                      }
                     }
                   })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="you@example.com"
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -172,4 +182,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;

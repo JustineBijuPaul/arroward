@@ -15,75 +15,95 @@ function isAxiosError(error: unknown): error is AxiosError {
 }
 
 export async function fetchManagers(): Promise<Manager[]> {
-  const response = await axios.get<Manager[]>(`${API_URL}/admin/managers`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-    }
-  });
+  const response = await api.get('admin/managers');
   return response.data;
 }
 
 export async function createManager(data: Omit<Manager, '_id' | 'createdAt' | 'updatedAt'> & { isEditing?: boolean }): Promise<Manager> {
+  // Move validation and data formatting outside try block
+  const validationErrors: string[] = [];
+  const phone = data.phone?.trim() || '';
+  
+  if (!data.firstName?.trim()) validationErrors.push('First name is required');
+  if (!data.lastName?.trim()) validationErrors.push('Last name is required');
+  if (!data.email?.trim()) validationErrors.push('Email is required');
+  if (!data.isEditing && !data.password) validationErrors.push('Password is required');
+  if (!phone) validationErrors.push('Phone number is required');
+  if (!data.assignedArea) validationErrors.push('Assigned area is required');
+  
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (data.email && !emailRegex.test(data.email.trim())) {
+    validationErrors.push('Invalid email format');
+  }
+
+  // Validate phone format
+  const phoneRegex = /^\d{10}$/;
+  if (phone && !phoneRegex.test(phone)) {
+    validationErrors.push('Phone number must be 10 digits');
+  }
+  
+  if (validationErrors.length > 0) {
+    throw new Error(validationErrors.join(', '));
+  }
+
+  const formattedData = {
+    firstName: data.firstName.trim(),
+    lastName: data.lastName.trim(),
+    email: data.email.trim().toLowerCase(),
+    password: data.password,
+    phone: phone,
+    assignedArea: data.assignedArea,
+    status: data.status || 'active'
+  };
+
   try {
-    console.log('Creating manager with data:', data);
-
-    // Validate required fields
-    if (!data.firstName?.trim()) {
-      throw new Error('First name is required');
-    }
-    if (!data.lastName?.trim()) {
-      throw new Error('Last name is required');
-    }
-    if (!data.email?.trim()) {
-      throw new Error('Email is required');
-    }
-    if (!data.password) {
-      throw new Error('Password is required');
-    }
-    if (!data.assignedArea) {
-      throw new Error('Assigned area is required');
-    }
-
-    const formattedData = {
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
-      email: data.email.trim(),
-      password: data.password,
-      phone: data.phone?.trim() || '',
-      assignedArea: data.assignedArea,
-      status: data.status || 'active'
-    };
-
-    console.log('Sending formatted data:', formattedData);
     const response = await api.post<Manager>('/admin/managers', formattedData);
     return response.data;
-  } catch (error: unknown) {
-    if (axios.isAxiosError<ApiError>(error)) {
-      // Now TypeScript knows about your API's error structure
-      const errorMessage = error.response?.data?.message ?? error.message;
-      console.error('API error:', errorMessage);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const errorMessage = error.response.data?.message || 'Failed to create manager';
+      
+      // Now formattedData is accessible here
+      if (errorMessage.includes('email already exists')) {
+        throw new Error(`The email ${formattedData.email} is already in use. Please use a different email address.`);
+      }
+      
+      console.error('Manager creation failed:', {
+        status: error.response.status,
+        message: errorMessage,
+        data: error.response.data
+      });
       throw new Error(errorMessage);
     }
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unknown error occurred');
+    throw error;
   }
 }
 
 export async function updateManager(id: string, data: Partial<Manager>): Promise<Manager> {
-  const response = await axios.patch<Manager>(`${API_URL}/admin/managers/${id}`, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-    }
-  });
+  const response = await api.patch<Manager>(`/admin/managers/${id}`, data);
   return response.data;
 }
 
 export async function deleteManager(id: string): Promise<void> {
-  await axios.delete(`${API_URL}/admin/managers/${id}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+  try {
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new Error('Invalid manager ID format');
     }
-  });
+
+    const response = await api.delete(`/admin/managers/${id}`);
+    
+    if (response.status !== 200) {
+      throw new Error(response.data?.message || 'Failed to delete manager');
+    }
+
+    console.log('Manager deleted successfully:', id);
+  } catch (error) {
+    console.error('Delete request failed:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      id
+    });
+    throw error;
+  }
 }

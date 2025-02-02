@@ -1,37 +1,43 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Area } from '../types';
+import { AreaFormData } from '../types';
 
 interface AreaFormProps {
-  onSubmit: (data: Omit<Area, '_id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  initialData?: Partial<Area>;
-  isEditing?: boolean;
+  initialData?: Partial<AreaFormData>;
+  onSubmit: (data: AreaFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-const AreaForm: React.FC<AreaFormProps> = ({ onSubmit, initialData, isEditing = false }) => {
+const AreaForm: React.FC<AreaFormProps> = ({ initialData, onSubmit, onCancel }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const { register, handleSubmit, formState: { errors } } = useForm<Omit<Area, '_id' | 'createdAt' | 'updatedAt'>>({
-    defaultValues: initialData,
-    mode: 'onChange'
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<AreaFormData>({
+    defaultValues: {
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      coordinates: initialData?.coordinates || [0, 0],
+      country: initialData?.country || '',
+      state: initialData?.state || '',
+      city: initialData?.city || ''
+    }
   });
 
-  const handleFormSubmit = async (data: Omit<Area, '_id' | 'createdAt' | 'updatedAt'>) => {
+  const handleFormSubmit = async (data: AreaFormData) => {
     try {
       setSubmitError(null);
       
-      // Format the coordinates with proper precision
+      // Format the coordinates directly as an array
       const formattedData = {
+        ...data,
         name: data.name.trim(),
-        description: data.description?.trim() || '',
-        coordinates: {
-          coordinates: [
-            Number(Number(data.coordinates?.coordinates?.[0]).toFixed(6)),
-            Number(Number(data.coordinates?.coordinates?.[1]).toFixed(6))
-          ] as [number, number]
-        },
-        country: data.country.trim(),
-        state: data.state.trim(),
-        city: data.city.trim()
+        description: data.description?.trim(),
+        coordinates: [
+          Number(data.coordinates?.[0] || 0),
+          Number(data.coordinates?.[1] || 0)
+        ] as [number, number],
+        country: data.country?.trim(),
+        state: data.state?.trim(),
+        city: data.city?.trim()
       };
 
       console.log('Submitting formatted data:', formattedData);
@@ -84,19 +90,20 @@ const AreaForm: React.FC<AreaFormProps> = ({ onSubmit, initialData, isEditing = 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="coordinates.coordinates.0" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="coordinates.0" className="block text-sm font-medium text-gray-700">
             Longitude *
           </label>
           <input
             type="number"
             step="0.000001"
-            id="coordinates.coordinates.0"
-            {...register('coordinates.coordinates.0', { 
+            id="coordinates.0"
+            {...register('coordinates.0', { 
               required: 'Longitude is required',
               valueAsNumber: true,
               validate: {
                 isValid: (value) => {
-                  if (value < -180 || value > 180) {
+                  const num = Number(value);
+                  if (isNaN(num) || num < -180 || num > 180) {
                     return 'Longitude must be between -180 and 180';
                   }
                   return true;
@@ -105,26 +112,27 @@ const AreaForm: React.FC<AreaFormProps> = ({ onSubmit, initialData, isEditing = 
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
-          {errors.coordinates?.coordinates?.[0] && (
+          {errors.coordinates?.[0] && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.coordinates.coordinates[0].message}
+              {errors.coordinates[0].message}
             </p>
           )}
         </div>
         <div>
-          <label htmlFor="coordinates.coordinates.1" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="coordinates.1" className="block text-sm font-medium text-gray-700">
             Latitude *
           </label>
           <input
             type="number"
             step="0.000001"
-            id="coordinates.coordinates.1"
-            {...register('coordinates.coordinates.1', { 
+            id="coordinates.1"
+            {...register('coordinates.1', { 
               required: 'Latitude is required',
               valueAsNumber: true,
               validate: {
                 isValid: (value) => {
-                  if (value < -90 || value > 90) {
+                  const num = Number(value);
+                  if (isNaN(num) || num < -90 || num > 90) {
                     return 'Latitude must be between -90 and 90';
                   }
                   return true;
@@ -133,9 +141,9 @@ const AreaForm: React.FC<AreaFormProps> = ({ onSubmit, initialData, isEditing = 
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
-          {errors.coordinates?.coordinates?.[1] && (
+          {errors.coordinates?.[1] && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.coordinates.coordinates[1].message}
+              {errors.coordinates[1].message}
             </p>
           )}
         </div>
@@ -186,12 +194,19 @@ const AreaForm: React.FC<AreaFormProps> = ({ onSubmit, initialData, isEditing = 
         )}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
-          className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          {isEditing ? 'Update' : 'Create'} Area
+          Save Area
         </button>
       </div>
     </form>

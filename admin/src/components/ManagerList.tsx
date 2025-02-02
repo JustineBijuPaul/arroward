@@ -26,6 +26,9 @@ const ManagerList: React.FC<ManagerListProps> = ({ managers, onEdit, onDelete })
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     Role
                   </th>
+                  <th scope="col" className="px-6 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Manager Code
+                  </th>
                   <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                     <span className="sr-only">Actions</span>
                   </th>
@@ -35,13 +38,16 @@ const ManagerList: React.FC<ManagerListProps> = ({ managers, onEdit, onDelete })
                 {managers.map((manager) => (
                   <tr key={manager._id}>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                      {manager.name}
+                      {`${manager.firstName} ${manager.lastName}`}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {manager.email}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {manager.role}
+                      {manager.status}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {manager.managerCode}
                     </td>
                     <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                       <button

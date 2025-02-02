@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import Header from '../components/Header';
 import ServiceList from '../components/ServiceList';
 import ServiceForm from '../components/ServiceForm';
 import Modal from '../components/Modal';
@@ -17,8 +16,16 @@ const Services: React.FC = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const handleSubmit = async (data: Omit<Service, '_id' | 'createdAt' | 'updatedAt'>) => {
+    if (!data.description) {
+      console.error('Description missing in submitted data:', data);
+      return;
+    }
+    if (typeof data.basePrice !== 'number' || data.basePrice < 0) {
+      console.error('Invalid price in submitted data:', data);
+      return;
+    }
     try {
-      if (selectedService) {
+      if (selectedService && selectedService._id) {
         await editService(selectedService._id, data);
       } else {
         await addService(data);
@@ -27,6 +34,7 @@ const Services: React.FC = () => {
       setSelectedService(null);
     } catch (err) {
       console.error('Failed to save service:', err);
+      alert('Failed to save service. Please check all required fields.');
     }
   };
 
@@ -67,8 +75,8 @@ const Services: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Header title="Services">
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
           <button
             type="button"
             onClick={() => {
@@ -80,7 +88,7 @@ const Services: React.FC = () => {
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add Service
           </button>
-        </Header>
+        </div>
 
         <ServiceList
           services={services}
@@ -108,4 +116,4 @@ const Services: React.FC = () => {
   );
 };
 
-export default Services; 
+export default Services;

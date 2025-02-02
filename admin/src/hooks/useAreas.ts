@@ -67,8 +67,10 @@ export const useAreas = () => {
     try {
       await deleteArea(id);
       setAreas(prev => prev.filter(area => area._id !== id));
-    } catch (err) {
-      throw err;
+    } catch (error) {
+      console.error('Error deleting area:', error);
+      const message = error instanceof Error ? error.message : 'Failed to delete area';
+      throw new Error(message);
     }
   };
 

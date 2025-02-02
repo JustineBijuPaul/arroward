@@ -14,7 +14,6 @@ export const useManagers = () => {
       setManagers(data);
       setError(null);
     } catch (err) {
-      console.error('Error loading managers:', err);
       setError(err instanceof Error ? err.message : 'Failed to load managers');
     } finally {
       setLoading(false);
@@ -48,10 +47,22 @@ export const useManagers = () => {
 
   const removeManager = async (id: string) => {
     try {
+      console.log('Attempting to remove manager:', id);
+      
+      // First verify manager exists
+      const managerExists = managers.some(m => m._id === id);
+      if (!managerExists) {
+        throw new Error('Manager not found in current list');
+      }
+
       await deleteManager(id);
+      console.log('Manager deleted successfully:', id);
+      
       setManagers(prev => prev.filter(manager => manager._id !== id));
-    } catch (err) {
-      throw err;
+      return true;
+    } catch (error) {
+      console.error('Manager removal failed:', error);
+      throw error;
     }
   };
 
@@ -64,4 +75,4 @@ export const useManagers = () => {
     removeManager,
     refreshManagers: loadManagers
   };
-}; 
+};

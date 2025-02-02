@@ -1,33 +1,21 @@
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import api from '../utils/axios';
 
 export interface DashboardStats {
   totalManagers: number;
   totalAreas: number;
   totalServices: number;
   totalRevenue: number;
-  recentActivity: {
-    _id: string;
-    type: 'manager_added' | 'service_created' | 'area_added';
-    description: string;
-    timestamp: string;
-  }[];
-  areaDistribution: {
-    areaName: string;
-    serviceCount: number;
-  }[];
-  monthlyRevenue: {
-    month: string;
-    revenue: number;
-  }[];
+  recentActivity: any[];
+  areaDistribution: any[];
+  monthlyRevenue: any[];
 }
 
-export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const response = await axios.get<DashboardStats>(`${API_URL}/admin/stats/dashboard`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-    }
-  });
-  return response.data;
-} 
+export const fetchDashboardStats = async (): Promise<DashboardStats> => {
+  try {
+    const response = await api.get('/admin/stats/dashboard');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    throw error;
+  }
+}; 

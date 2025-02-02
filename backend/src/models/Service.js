@@ -10,6 +10,11 @@ const serviceSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  areaId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Area',
+    required: true
+  },
   category: {
     type: String,
     required: true,
@@ -41,4 +46,4 @@ const serviceSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Service', serviceSchema); 
+module.exports = mongoose.model('Service', serviceSchema);

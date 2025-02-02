@@ -22,7 +22,7 @@ const areaSchema = new mongoose.Schema({
     type: String,
     required: true
   }],
-  coordinates: {
+  location: {
     type: {
       type: String,
       enum: ['Point'],
@@ -30,15 +30,35 @@ const areaSchema = new mongoose.Schema({
     },
     coordinates: {
       type: [Number],
-      required: true
+      validate: {
+        validator: function(v) {
+          return v.length === 2 && 
+                 v[0] >= -180 && v[0] <= 180 && // longitude
+                 v[1] >= -90 && v[1] <= 90;     // latitude
+        },
+        message: props => 'Invalid coordinates'
+      }
     }
   },
   active: {
     type: Boolean,
     default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
-areaSchema.index({ coordinates: '2dsphere' });
+areaSchema.index({ location: '2dsphere' });
+
+areaSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
 
 module.exports = mongoose.model('Area', areaSchema); 

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings } from '../types';
-import { fetchSettings, updateSettings } from '../api/settings';
+import { Settings, fetchSettings, updateSettings, changePassword } from '../api/settings';
 
 export const useSettings = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -9,6 +8,7 @@ export const useSettings = () => {
 
   const loadSettings = async () => {
     try {
+      setLoading(true);
       const data = await fetchSettings();
       setSettings(data);
       setError(null);
@@ -23,12 +23,22 @@ export const useSettings = () => {
     loadSettings();
   }, []);
 
-  const updateSettingsData = async (data: Partial<Settings>) => {
+  const updateUserSettings = async (updates: Partial<Settings>) => {
     try {
-      const updatedSettings = await updateSettings(data);
+      const updatedSettings = await updateSettings(updates);
       setSettings(updatedSettings);
       return updatedSettings;
     } catch (err) {
+      console.error('Error updating settings:', err);
+      throw err;
+    }
+  };
+
+  const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
+    try {
+      await changePassword(currentPassword, newPassword);
+    } catch (err) {
+      console.error('Error changing password:', err);
       throw err;
     }
   };
@@ -37,7 +47,8 @@ export const useSettings = () => {
     settings,
     loading,
     error,
-    updateSettings: updateSettingsData,
+    updateSettings: updateUserSettings,
+    changePassword: handlePasswordChange,
     refreshSettings: loadSettings
   };
 }; 
